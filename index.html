@@ -13,7 +13,7 @@
         }
     </style>
 
-    <link rel="stylesheet" href="cm改ui增加批量修改備註.css">
+    <link rel="stylesheet" href="cm.css">
 </head>
 <body>
 
@@ -60,8 +60,16 @@
             </div>
         </div>
 
+        <!-- 橫向下拉選單控制區 -->
+        <div class="controls-panel">
+            <div class="horizontal-tag-group">
+                <button class="btn-add-select" onclick="addSelect(2)">+ 增加附件</button>
+                <div id="select-container-2" class="horizontal-container"></div>
+            </div>
+        </div>
+
         <div class="label-preview-container">
-                        <div class="preview-scale-wrapper">
+            <div class="preview-scale-wrapper">
                 <div id="print-area">
                     <div class="label-grid">
                         <div class="grid-cell col-left">
@@ -71,7 +79,11 @@
                             <div class="auto-fit-right" id="label-item-1" contenteditable="true" spellcheck="false" onclick="selectAllText(this)" oninput="handleManualEdit(this, 'line1')"></div>
                         </div>
                         <div class="grid-cell">
-                            <div class="auto-fit-right" id="label-item-2" contenteditable="true" spellcheck="false" onclick="selectAllText(this)" oninput="handleManualEdit(this, 'line2')"></div>
+                            <div class="auto-fit-right" id="label-wrapper-2" onclick="focusEditable(2)">
+                                <span id="label-item-2" class="editable-span" contenteditable="true" spellcheck="false" 
+                                      onclick="selectAllText(this); event.stopPropagation();" 
+                                      oninput="handleManualEdit(document.getElementById('label-wrapper-2'), 'line2')"></span><span id="label-tags-2" class="readonly-tags"></span>
+                            </div>
                         </div>
                         <div class="grid-cell">
                             <div class="auto-fit-right" id="label-item-3" contenteditable="true" spellcheck="false" onclick="selectAllText(this)" oninput="handleManualEdit(this, 'line3')"></div>
@@ -110,6 +122,6 @@
 
 <div id="batch-print-container"></div>
 
-<script src="cm改ui增加批量修改備註.js"></script>
+<script src="cm.js"></script>
 </body>
 </html>
