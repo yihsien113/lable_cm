@@ -76,49 +76,48 @@ document.body.appendChild(datalist);
 function parseAndSortRemarks(rawText) {
     if (!rawText) return { midSelects: [], midText: "" };
     
-    // 1. 自動校正：把 ↑ 和 ↓ 換成 ▲ 和 ▼
+    // 1. 自動校正與極致防呆 (處理各種 AI 可能亂加的空格)
     let standardizedText = rawText
-        .replace(/\+鎖洞↑/g, '+鎖洞▲')
-        .replace(/\+鎖洞↓/g, '+鎖洞▼');
+        .replace(/\+?\s*鎖\s*洞\s*[↓下]/g, '+鎖洞▼')
+        .replace(/\+?\s*鎖\s*洞\s*[↑上]/g, '+鎖洞▲')
+        .replace(/(\+鎖洞[▲▼])\s+(?=\d)/g, '$1') // 消除箭頭與數字間的空格
+        .replace(/(\d)\s+(cm|公分)/gi, '$1$2')     // 消除數字與單位間的空格
+        .replace(/(內左|內右|外左|外右)/g, ' $1 ');
 
     // 2. 換行轉空格
     let cleanRaw = standardizedText.replace(/[\r\n]+/g, ' ');
     
-    // 3. 複合詞保護 (改良版)：直接把特定關鍵字內的 '+' 換成 '_PLUS_' 避免被誤切
+    // 3. 複合詞保護
     let protectedText = cleanRaw
         .replace(/鎖\+強/g, '鎖_PLUS_強')
         .replace(/左右\+1支/g, '左右_PLUS_1支')
         .replace(/四邊\+1支/g, '四邊_PLUS_1支')
         .replace(/四\+1支/g, '四_PLUS_1支');
 
-    // 4. 將剩下的 '+' 前面統一補上空格，確保像 "皮封四邊+岩棉" 能被順利拆開
+    // 4. 將剩下的 '+' 前面統一補上空格
     let formattedText = protectedText.replace(/\+/g, ' +');
-    
-    // 5. 利用空格、逗號、斜線進行切割
     let rawItems = formattedText.split(/[\s\/,]+/);
     
-    // 6. 將保護的符號 '_PLUS_' 還原回 '+'
+    // 5. 將保護的符號 '_PLUS_' 還原回 '+'
     rawItems = rawItems.map(item => item.replace(/_PLUS_/g, '+'));
     
-    // 7. 智慧過濾機制：過濾出白名單、選單選項或 +鎖洞組合
+    // 6. 智慧過濾機制
     let validItems = rawItems.filter(item => {
-        let baseKey = item.replace(/[\d.]+$/, '');
+        let baseKey = item.replace(/[\d.]+(cm|公分)?$/i, ''); 
         if (accessoryPriority.hasOwnProperty(baseKey)) return true;
-        if (dropdownOptions.includes(baseKey)) return true; // 允許額外的五金與加工選項
-        if (/^\+鎖洞[▲▼][\d.]+$/.test(item)) return true;
+        if (dropdownOptions.includes(baseKey)) return true;
+        if (/^\+?鎖洞[▲▼][\d.]+(cm|公分)?$/i.test(item)) return true;
         return false;
     });
 
-    if (validItems.length === 0) {
-        return { midSelects: [], midText: "" };
-    }
+    if (validItems.length === 0) return { midSelects: [], midText: "" };
 
-    // 8. 排序機制
+    // 7. 排序機制
     validItems.sort((a, b) => {
-        let keyA = a.replace(/[\d.]+$/, '');
-        let keyB = b.replace(/[\d.]+$/, '');
-        let valA = accessoryPriority.hasOwnProperty(keyA) ? accessoryPriority[keyA] : (/^\+鎖洞[▲▼]/.test(a) ? 20 : 99);
-        let valB = accessoryPriority.hasOwnProperty(keyB) ? accessoryPriority[keyB] : (/^\+鎖洞[▲▼]/.test(b) ? 20 : 99);
+        let keyA = a.replace(/[\d.]+(cm|公分)?$/i, '');
+        let keyB = b.replace(/[\d.]+(cm|公分)?$/i, '');
+        let valA = accessoryPriority.hasOwnProperty(keyA) ? accessoryPriority[keyA] : (/^\+?鎖洞[▲▼]/.test(a) ? 20 : 99);
+        let valB = accessoryPriority.hasOwnProperty(keyB) ? accessoryPriority[keyB] : (/^\+?鎖洞[▲▼]/.test(b) ? 20 : 99);
         return valA - valB;
     });
     
@@ -126,9 +125,9 @@ function parseAndSortRemarks(rawText) {
     let midSelects = [];
     let midTextArray = [];
 
-    // 直接將所有符合選單項目的塞進唯一的 midSelects
+    // 8. 分配至下拉選單或純文字備註
     finalSet.forEach(item => {
-        let baseKey = item.replace(/[\d.]+$/, ''); 
+        let baseKey = item.replace(/[\d.]+(cm|公分)?$/i, ''); 
         if (dropdownOptions.includes(baseKey)) {
             midSelects.push(item);
         } else {
